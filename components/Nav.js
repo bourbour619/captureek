@@ -20,7 +20,7 @@ import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import ChevronRightIcon from '@material-ui/icons/ChevronRight';
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { useUser } from '../src/contexts/UserContext';
+import { useUser } from '../lib/contexts/UserContext';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 
 
@@ -77,7 +77,7 @@ const Nav = ({setNavOpen,setSelected}) => {
     const classes = useStyles();
     const theme = useTheme();
     const [open, setOpen] = useState(false)
-    const [info, setInfo] = useUser()
+    const [user, setUser] = useUser()
 
     const handleDrawerOpen = () => {
       setOpen(true);
@@ -90,8 +90,8 @@ const Nav = ({setNavOpen,setSelected}) => {
     };
 
     const icons = {
-      'ضبط جلسه جدید' : <FiberManualRecordTwoToneIcon color='error' /> ,
-      'جلسات ضبط شده' : <OndemandVideoTwoToneIcon color='secondary' /> ,
+      'ضبط جدید' : <FiberManualRecordTwoToneIcon color='error' /> ,
+      'ضبط شده‌ها' : <OndemandVideoTwoToneIcon color='secondary' /> ,
       'خروج' : <ExitToAppSharpIcon color='action' />
     }
     
@@ -115,7 +115,7 @@ const Nav = ({setNavOpen,setSelected}) => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap>
-            ضبط کننده جلسات دان
+            کپچریک
           </Typography>
         </Toolbar>
       </AppBar>
@@ -138,10 +138,10 @@ const Nav = ({setNavOpen,setSelected}) => {
               <ListItemIcon>
                   <AccountBoxIcon color='primary'/>
               </ListItemIcon>
-              <ListItemText primary={info.user['name']} />
+              <ListItemText primary={user['name']} />
           </ListItem>
           <Divider variant='fullWidth' style={{ margin: '1em 0'}} />
-          {['ضبط جلسه جدید', 'جلسات ضبط شده','خروج'].map((text, index) => (
+          {['ضبط جدید', 'ضبط شده‌ها','خروج'].map((text, index) => (
             <ListItem className={classes.listItem} button key={text} onClick={() => setSelected(text)} >
               <ListItemIcon>
                 { icons[text] }

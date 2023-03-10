@@ -4,9 +4,9 @@ import { Autocomplete } from '@material-ui/lab'
 import React, {useState, useEffect } from 'react'
 import Record from './Record'
 import _ from 'lodash'
-import { keys } from '../src/config'
-import { useUser } from '../src/contexts/UserContext'
 import https from 'https'
+import { apiUrl } from '../lib/config';
+import useLocalStorage from '../lib/hooks/useLocalStorage';
 
 const useStyles = makeStyles(theme => ({
     gridRoot: {
@@ -41,10 +41,10 @@ const Records = ({records}) => {
     const [lastRecords, setLastRecords] = useState([])
     const [filter, setFilter] = useState(false)
     const [result , setResult] = useState([])
-    const [search, setSearch] = useState({})
+    const [search, setSearch] = useState('')
     const [update, setUpdate] = useState(false)
+    const [token, setToken] = useLocalStorage('token', {})
 
-    const [info,setInfo] = useUser()
 
     useEffect(() => getLastRecords(),[])
     useEffect(() => {
@@ -56,12 +56,11 @@ const Records = ({records}) => {
 
 
     const filterSession = () => {
-        const filter = _.pickBy(search, _.identity)
         if(_.isEmpty(filter)){
             setFilter(false)
         }else{
             setFilter(true)
-            const f = _.filter(lastRecords, filter)
+            const f = _.filter(lastRecords, search)
             setResult(f)
         }
     }
@@ -70,20 +69,19 @@ const Records = ({records}) => {
         const agent = new https.Agent({
             rejectUnauthorized: false,
           });
-        const res = await fetch(`${keys.serverURI}/records/`, {
+        const res = await fetch(`${apiUrl}/records/`, {
             agent,
             headers: {
                 'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${ token }`
             }
         })
         let newlastRecords = await res.json()
         newlastRecords = newlastRecords.map(record => {
             return {
               ...record,
-              sessionName: record['session_name'],
-              className: record['class_name'],
-              recordUri: record['uri'],
+              name: record['name'],
+              uri : record['uri'],
             }
           })
         if(!_.isEqual(lastRecords, newlastRecords)){
@@ -112,41 +110,17 @@ const Records = ({records}) => {
                         <Grid item>
                         <Autocomplete
                             size='small'
-                            options={lastRecords.map(sc => sc.sessionName)}
+                            options={lastRecords.map(sc => sc.name)}
                             getOptionLabel={(option) => option}
                             style={{ width: 300 }}
                             renderInput={(params) => 
                                 <TextField {...params} 
-                                label="نام جلسه" 
+                                label="نام" 
                                 variant="standard"
-                                onChange={e => setSearch(search => 
-                                    ({...search, sessionName: e.target.value})
-                                )}   
+                                onChange={e => setSearch(e.target.value)}   
                             />}
-                            noOptionsText='جلسه‌ای یافت نشد'
-                            onChange={(e,v) => setSearch(search => 
-                                ({...search, sessionName: v})
-                            )}
-                        />
-                        </Grid>
-                        <Grid item>
-                        <Autocomplete
-                            size='small'
-                            options={lastRecords.map(sc => sc.className)}
-                            getOptionLabel={(option) => option}
-                            style={{ width: 300 }}
-                            renderInput={(params) => 
-                                <TextField {...params} 
-                                label="نام کلاس" 
-                                variant="standard" 
-                                onChange={e => setSearch(search => 
-                                    ({...search, className: e.target.value})
-                                )}
-                            />}
-                            noOptionsText='کلاسی یافت نشد'
-                            onChange={(e,v) => setSearch(search => 
-                                ({...search, className: v})
-                            )}
+                            noOptionsText='ضبطی یافت نشد'
+                            onChange={(e,v) => setSearch(v)}
                         />
                         </Grid>
                         <Grid item>
@@ -167,7 +141,7 @@ const Records = ({records}) => {
                         <GridList cellHeight='auto' className={classes.gridList} cols={matchesSm ? 1 : matchesMd ? 2 : 3}>
                             {!filter ?
                              lastRecords.map((sc) => (
-                            <GridListTile key={sc.sessionName} cols={sc.cols || 1}>
+                            <GridListTile key={sc.name} cols={sc.cols || 1}>
                                 <Card >
                                     <CardContent className={classes.gridItem}>
                                        <Record {...sc} setUpdate={setUpdate}/>
@@ -177,7 +151,7 @@ const Records = ({records}) => {
                             ))
                             :
                             result.map((f) => (
-                                <GridListTile key={f.sessionName} cols={f.cols || 1}>
+                                <GridListTile key={f.name} cols={f.cols || 1}>
                                     <Card >
                                         <CardContent className={classes.gridItem}>
                                            <Record {...f} setUpdate={setUpdate} />

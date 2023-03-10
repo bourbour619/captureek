@@ -9,9 +9,8 @@ import axios from 'axios'
 import { saveAs } from 'file-saver'
 import { Alert } from '@material-ui/lab';
 import ReactPlayer from 'react-player'
-import { keys } from '../src/config';
-import { useUser } from '../src/contexts/UserContext';
-import https from 'https'
+import { apiUrl } from '../lib/config';
+import useLocalStorage from '../lib/hooks/useLocalStorage';
 
 const useStyles = makeStyles(theme => ({
     videoPanel:{
@@ -26,7 +25,7 @@ let stream , recorder;
 const Recorder = () => {
     const classes = useStyles()
     const streamRef = useRef()
-    const [url, setUrl] = useState('')
+    const [uri, setUri] = useState('')
     const [dims, setDims] = useState({
         width: 0,
         height: 0
@@ -35,41 +34,25 @@ const Recorder = () => {
     const [reset, setReset] = useState(true)
     const [done, setDone] = useState(false)
     const [pause, setPause] = useState(false)
-    const [sessionName, setSessionName] = useState('')
-    const [className, setClassName] = useState('')
-    const [errors, setErrors] = useState({})
+    const [name, setName] = useState('')
+    const [error, setError] = useState('')
     const [snakbar, setSnackbar] = useState({
         open: false,
         status: '',
         msg: ''
     })
 
-    const [user,setUser] = useUser()
+    const [token, setToken] = useLocalStorage('token', {})
 
 
-    const checkRecordEntry = () => {
-        let valid = true
-        if(_.isEmpty(sessionName)){
-            setErrors(errors => ({
-                ...errors,
-                sessionName: 'نام جلسه را وارد نمایید'
-            }))
-            valid = false
-        }
-        if(_.isEmpty(className)){
-            setErrors(errors => ({
-                ...errors,
-                className: 'نام کلاس را وارد نمایید'
-            }))
-            valid = false
-        }
-        return valid
-    }
 
     const startRecord = async(e) => {
         e.preventDefault()
-        if(!checkRecordEntry()) return ;
-        setErrors({})
+        if(_.isEmpty(name)){
+            setError('نام برای ضبط وارد نمایید')
+            return
+        }
+        setError('')
         stream = await navigator.mediaDevices.getDisplayMedia({
             video: { 
                 mediaSource: "screen",
@@ -91,7 +74,7 @@ const Recorder = () => {
         recorder.onstop = e => {
             streamRef.current.srcObject = null
             const completeBlob = new Blob(chunks, { type: chunks[0].type })
-            setUrl(URL.createObjectURL(completeBlob))
+            setUri(URL.createObjectURL(completeBlob))
             setRecord(false)
             setDone(true)
         }
@@ -110,16 +93,15 @@ const Recorder = () => {
         }
     }
     const deleteRecord = () => {
-        setUrl('')
+        setUri('')
         setReset(true)
         setDone(false)
     }
     const downloadRecord = () => {
-        fetch(url)
+        fetch(uri)
             .then(res => res.blob())
             .then(blob => {
-                const fileName = `${sessionName}_${className}`
-                saveAs(blob, `${fileName}.mkv`)
+                saveAs(blob, `${name}.mkv`)
             })
     }
     const saveRecord = () => {
@@ -128,20 +110,19 @@ const Recorder = () => {
             status: 'loading',
             msg: 'در حال ذخیره فایل روی سرور ...'
         }))
-        fetch(url)
+        fetch(uri)
             .then(res => res.blob())
             .then(blob => {        
                 const data = new FormData()
-                data.append('session_name', sessionName)
-                data.append('class_name', className)
+                data.append('name', name)
                 data.append('file', blob)
                 const config = {
                     'Content-Type': 'multipart/form-data',
                     headers: {
-                        'Authorization': `Bearer ${user.token}`,
+                        'Authorization': `Bearer ${ token }`,
                     }
                 }
-                axios.post(`${keys.serverURI}/records/`, data, config)
+                axios.post(`${apiUrl}/records/`, data, config)
                     .then(res => {
                         if(res.status === 201){
                             setSnackbar(snackbar => ({...snackbar, 
@@ -189,22 +170,12 @@ const Recorder = () => {
                     >
                         <Grid item>
                             <TextField 
-                                error={errors.sessionName ? true: false}
-                                label="نام جلسه" 
+                                error={error ? true: false}
+                                label="نام" 
                                 variant="standard"
-                                onChange={(e) => setSessionName(e.target.value) }
-                                helperText={errors.sessionName}
+                                onChange={(e) => setName(e.target.value) }
+                                helperText={error}
                                 style={{ width: 300 }}
-                            />
-                        </Grid>
-                        <Grid item>
-                            <TextField 
-                            error={errors.className ? true: false}
-                            label="نام کلاس"
-                            variant="standard"
-                            onChange={(e) => setClassName(e.target.value) }
-                            helperText={errors.className}
-                            style={{ width: 300 }}
                             />
                         </Grid>
                         <Grid item >
@@ -215,7 +186,7 @@ const Recorder = () => {
                                 type='submit'
                                 size='medium'
                             >
-                                ضبط جلسه
+                                ضبط
                             </Button>
                         </Grid>
                     </Grid>
@@ -260,9 +231,11 @@ const Recorder = () => {
                         </Grid>
                         : <ReactPlayer
                              controls
-                             url={url}
-                             width={dims.width}
-                             height={dims.height}
+                             url={uri}
+                            //  width={dims.width}
+                            //  height={dims.height}
+                            width='50vw'
+                            height= '50vh'
                         />}
                     </Card>
                 </Grid>

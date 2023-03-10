@@ -4,10 +4,9 @@ import Nav from './Nav'
 import Recorder from './Recorder'
 import Records from './Records'
 import clsx from 'clsx'
-import axios from 'axios'
-import { useUser } from '../src/contexts/UserContext'
-import { keys } from '../src/config'
+import { useUser } from '../lib/contexts/UserContext'
 import { useRouter } from 'next/router'
+import useLocalStorage from '../lib/hooks/useLocalStorage'
 
 const drawerWidth = 240;
 
@@ -52,20 +51,19 @@ const useStyles = makeStyles(theme => ({
 const App = (props) => {
   
     const classes = useStyles()
-    const [selected, setSelected] = useState('ضبط جلسه جدید')
+    const [selected, setSelected] = useState('ضبط جدید')
     const [navOpen, setNavOpen] = useState(false)
     const componentItems =  {
-      'ضبط جلسه جدید': <Recorder />,
-      'جلسات ضبط شده': <Records records={props.records} />,
+      'ضبط جدید': <Recorder />,
+      'ضبط شده‌ها': <Records records={props.records} />,
     }
 
-    const[info, setInfo] = useUser()
+    const [token, setToken] = useLocalStorage('token', {})
     const router = useRouter()
 
     useEffect(() => {
       if(selected === 'خروج'){
-          localStorage.removeItem('token');
-          setInfo({})
+          setToken(null)
           router.push('/login')
       }
     },[selected])

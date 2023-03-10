@@ -17,9 +17,9 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router'
 import axios from 'axios';
-import { keys } from '../src/config';
 import { styled } from '@mui/system';
 import { Paper } from '@material-ui/core';
+import { apiUrl } from '../lib/config';
 
 const Alert = (props) => {
   return <MuiAlert elevation={6} variant='filled' {...props} />
@@ -110,7 +110,7 @@ export default function Register() {
         password,
         password2
       }
-      axios.post(`${keys.serverURI}/users/register/`, data, {
+      axios.post(`${apiUrl}/users/register/`, data, {
         headers: {
           'Accept': 'application/json'
         }
