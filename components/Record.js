@@ -5,8 +5,9 @@ import ReactPlayer from 'react-player'
 import DeleteForeverSharpIcon from '@material-ui/icons/DeleteForeverSharp';
 import GetAppTwoToneIcon from '@material-ui/icons/GetAppTwoTone';
 import axios from 'axios';
-import { keys } from '../src/config';
-import { useUser } from '../src/contexts/UserContext';
+
+import { apiUrl } from '../lib/config';
+import useLocalStorage from '../lib/hooks/useLocalStorage';
 
 const useStyles = makeStyles((theme) => ({
     modal: {
@@ -47,13 +48,13 @@ const useStyles = makeStyles((theme) => ({
     }
   }));
 
-const Record = ({id, sessionName, className, recordUri, setUpdate}) => {
+const Record = ({id, name, uri, setUpdate}) => {
 
     const classes = useStyles()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const videoRef = useRef()
-    const [info,setInfo] = useUser()
+    const [token, setToken] = useLocalStorage('token', {})
 
     const handleOpen = () => {
         setOpen(true)
@@ -65,15 +66,14 @@ const Record = ({id, sessionName, className, recordUri, setUpdate}) => {
     
     const downloadRecord = () => {
         const video = videoRef.current.src
-        const fileName = `${sessionName}_${className}`
-        saveAs(video, fileName)
+        saveAs(video, name)
     }
 
     const deleteRecord = () => {
-        axios.delete(`${keys.serverURI}/records/${id}/`, {
+        axios.delete(`${apiUrl}/records/${id}/`, {
             headers: {
                 'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${ token }`
               }
         })
             .then(res => {
@@ -94,8 +94,8 @@ const Record = ({id, sessionName, className, recordUri, setUpdate}) => {
                 <video
                 
                  ref={videoRef}
-                 src={recordUri} 
-                 alt={`${sessionName}-${className}`} 
+                 src={uri} 
+                 alt={name} 
                  onClick={handleOpen} 
                  onLoadedData = {(e) => setLoading(false)}
                  style={{ 
@@ -113,14 +113,8 @@ const Record = ({id, sessionName, className, recordUri, setUpdate}) => {
                     <Chip 
                     variant="default" 
                     size="medium" 
-                    label={`${sessionName}`}
+                    label={name}
                     color='primary'
-                    />
-                    <Chip 
-                        variant="default" 
-                        size="medium" 
-                        label={`${className}`}
-                        color='primary'
                     />
                 </Grid>
                 <Grid item>
@@ -156,7 +150,7 @@ const Record = ({id, sessionName, className, recordUri, setUpdate}) => {
                     <div className={classes.paper}>
                     <ReactPlayer
                         controls
-                        url={recordUri}
+                        url={uri}
                         width='80vw'
                         height='80vh'
                     />

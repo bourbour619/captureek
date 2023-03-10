@@ -14,11 +14,11 @@ import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import Container from '@material-ui/core/Container';
 
-import { useUser } from '../src/contexts/UserContext'
+import { useUser } from '../lib/contexts/UserContext'
 import axios from 'axios';
-import { keys } from '../src/config';
 import Head from 'next/head';
 import { useRouter } from 'next/router'
+import { apiUrl } from '../lib/config';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -93,7 +93,7 @@ export default function Login() {
   const [alert, setAlert] = useState({})
   const [open, setOpen] = useState(false)
 
-  const [info, setInfo] = useUser()
+  const [user, setUser] = useUser()
   const router = useRouter()
 
   const classes = useStyles()
@@ -114,29 +114,29 @@ export default function Login() {
   const sendLogin = async(event) => {
     event.preventDefault()
     const data = { email, password }
-    axios.post(`${keys.serverURI}/users/login/`, data, {
+    axios.post(`${apiUrl}/users/login/`, data, {
       headers: {
         'Accept': 'application/json'
       }
     })
-          .then(res => {
-            if(res.data){
-              setInfo(res.data)
-              setAlert({
-                msg: `${email} خوش آمدید`,
-                type: 'success'
-              })
-            setOpen(true)
-            router.push('/dashboard')
-            }
+      .then(res => {
+        if(res.data){
+          setUser({...res.data.user, token: res.data.token})
+          setAlert({
+            msg: `${email} خوش آمدید`,
+            type: 'success'
           })
-          .catch(err => {
-            setAlert({
-              msg: 'نام کاربری یا رمز عبور اشتباه است',
-              type: 'error'
-            })
-            setOpen(true)
-          })
+        setOpen(true)
+        setTimeout(() => router.push('/dashboard'), 1000)
+        }
+      })
+      .catch(err => {
+        setAlert({
+          msg: 'نام کاربری یا رمز عبور اشتباه است',
+          type: 'error'
+        })
+        setOpen(true)
+      })
   }
 
 

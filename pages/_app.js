@@ -1,8 +1,8 @@
 import '../styles/globals.css'
-import { theme, jss } from '../src/config'
+import { theme, jss } from '../lib/config'
 import { StylesProvider, ThemeProvider } from '@material-ui/core/styles'
 import React, { useEffect } from 'react'
-import { UserProvider } from '../src/contexts/UserContext'
+import { UserProvider } from '../lib/contexts/UserContext'
 
 function App({ Component, pageProps }) {
   useEffect(() => {

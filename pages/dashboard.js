@@ -1,32 +1,57 @@
+import { Box, CircularProgress, makeStyles } from '@material-ui/core'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
 import App from '../components/App'
-import { keys } from '../src/config'
-import useLocalStorage from '../src/hooks/useLocalStorage'
-import withToken from '../src/withToken'
+import { apiUrl } from '../lib/config'
+import useGuard from '../lib/hooks/useGuard'
+import useLocalStorage from '../lib/hooks/useLocalStorage'
 
-const Dashboard = ({records}) => {
-    const rest = {
-        records,
-    }
+const Dashboard = () => {
+    const router = useRouter()
+    const ok = useGuard()
+    const [loading, setLoading] = useState(true)
+    const [token, setToken] = useLocalStorage('token', {})
+    const [records, setRecords] = useState([])
+    
+    useEffect(() => {
+      if(ok !== undefined){
+        if(!ok) return router.push('/login')
+        setLoading(false)
+      }
+    }, [ok])
+
+    useEffect(async() => {
+      if(token){
+        const res = await fetch(`${apiUrl}/records/`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+             }
+          })
+          let records = await res.json()
+          setRecords(records)
+      }
+    }, [])
+   
       return (
         <div className="container">
           <Head>
-            <title>ضبط کننده جلسات دان</title>
+            <title>کپچریک</title>
             <link rel="icon" href="/favicon.ico" />
           </Head>
-            <App {...rest} />
-    
-          {/* <footer>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Powered by{' '}
-              <img src="/vercel.svg" alt="Vercel Logo" className="logo" />
-            </a>
-          </footer> */}
-    
+            { loading ?
+              <div style={{
+                  display: 'flex',
+                  height: '100vh',
+                  justifyContent: 'center', 
+                  alignItems: 'center'
+              }}>
+                <CircularProgress /> 
+              </div>
+              : 
+              <App records={records} /> 
+            }
           <style jsx>{`
             .container {
               display: flex;
@@ -167,28 +192,5 @@ const Dashboard = ({records}) => {
       )
 }
     
-    
-    
-export const getServerSideProps = async () => {
-  if(typeof window !== 'undefined'){
-    const token = localStorage.getItem('token')
-    const res = await fetch(`${keys.serverURI}/records/`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    let records = await res.json()
-    return {
-        props: {
-            records: records ? records : []
-        }
-    }
-  }
-  return {
-    props: {}
-  }
 
-}
-
-export default withToken(Dashboard)
+export default Dashboard
